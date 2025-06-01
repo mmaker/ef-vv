@@ -52,7 +52,7 @@
 \begin{abstract}
 This project aims to provide a formally verified specification of the Fiat--Shamir transformation. Our goal is to deliver an interoperable framework for transforming interactive proof systems into non-interactive arguments that is widely adopted by the zero-knowledge community, ruling out certain classes of attacks.
 
-The first step is to develop machine-checkable proof that reduces (knowledge) soundness of a non-interactive protocol to the state-restoration (knowledge) soundness of an interactive one. We will then report on efficient implementation strategies for Fiat--Shamir, provide a formal security proof with precise bounds, and identify potential bugs in widely used implementations. Finally, we will deliver a software specification and a reference implementation for developers.
+The first step is to develop a machine-checkable proof that reduces (knowledge) soundness of a non-interactive protocol to the state-restoration (knowledge) soundness of an interactive one. We will then report on efficient implementation strategies for Fiat--Shamir, provide a formal security proof with precise bounds, and identify potential bugs in widely used implementations. Finally, we will deliver a software specification and a reference implementation for developers.
 \end{abstract}
 
 \setcounter{tocdepth}{2}
@@ -89,7 +89,7 @@ The first step is to develop machine-checkable proof that reduces (knowledge) so
 \section{Context and Positioning}
 
 
-The Fiat--Shamir transformation allows to turn a public-coin interactive proof into a non-interactive argument by means of a cryptographic hash function.
+The Fiat--Shamir transformation allows one to turn a public-coin interactive proof into a non-interactive argument by means of a cryptographic hash function.
 Informally, the way in which it works is by replacing the verifier messages with the output of a hash function. The transformation is studied in the random oracle model, and is today a fundamental tool for the development of cryptographic proofs such as zero-knowledge proofs, SNARKs and STARKs.
 
 % Motivation
@@ -119,12 +119,12 @@ The main reason for this mismatch is that academic papers in the zero-knowledge 
 \item \href{https://leastauthority.com/wp-content/uploads/2024/11/Updated\_071124\_Polygon\_Plonky3\_Final\_Audit\_Report.pdf}{\textsf{Least Authority- Polygon Plonky3 Updated Final Audit Report}} (FRI configuration omitted)
 \item \href{https://leastauthority.com/wp-content/uploads/2023/10/Safeheron_MPC_Algorithm_Updated_Final_Audit_Report_Least_Authority.pdf}{\textsf{Safeheron-MPC-Algorithm-Updated-Final-Audit-Report-Least-Authority}} (instance omitted)
     \end{itemize}
-    \item \textbf{Erroneous implementation of the Fiat--Shamir transformation}. This includes implementations that perform the Fiat--Shamir transformation without placing all the prover messages in the Fiat--Shamir transformation. Such mistakes can lead to proof forgery, as previously seen in \href{https://www.youtube.com/watch?v=Sk-S8-n6Jo4}{the last challenge attack}, a widely used optimization for the \href{https://eprint.iacr.org/2025/565}{Gemini polynomial commitment scheme}, a recent \href{https://t.co/RFaHQOtAAq}{Solana bug},
+    \item \textbf{Erroneous implementation of the Fiat--Shamir transformation}. This includes implementations that perform the Fiat--Shamir transformation without placing all the prover messages. Such mistakes can lead to proof forgery, as previously seen in \href{https://www.youtube.com/watch?v=Sk-S8-n6Jo4}{the last challenge attack}; a widely used optimization for the \href{https://eprint.iacr.org/2025/565}{Gemini polynomial commitment scheme}; a recent \href{https://t.co/RFaHQOtAAq}{Solana bug};
     \href{https://github.com/trailofbits/publications/blob/master/reviews/zcoin-lelantus-summary}{zcoin-lelantus-summary}.
 
     \item \textbf{Incorrect mapping to and from the hash function domain}. This includes improper serialization of group elements, biased challenge generation, accepting multiple representatives of the same element, or failing to validate group membership. These issues are still affecting some common implementations such as \href{https://github.com/arkworks-rs/crypto-primitives/blob/main/crypto-primitives/src/snark/constraints.rs#L163}{arkworks-rs} and need to be addressed.
 
-    \item \textbf{Flawed random oracle methodology:} Some attacks exploit the gap between the theoretical random oracle model and its practical instantiation, undermining soundness. This includes the line of work \href{https://dl.acm.org/doi/10.5555/946243.946302}{started by Yael Kalai}, which culminated in this year's \href{https://eprint.iacr.org/2025/118}{attack} on the Fiat--Shamir implementation used in \href{https://github.com/PolyhedraZK/Expander/}{PolyhedraZK/Expander}. This class of attacks is out of scope for this project proposal. We will however interact with other researchers working on this topic so that our implementation can be adapted to potential mitigation strategies.
+    \item \textbf{Flawed random oracle methodology:} Some attacks exploit the gap between the theoretical random oracle model and its practical instantiation, undermining soundness. This includes the line of work \href{https://dl.acm.org/doi/10.5555/946243.946302}{started by Yael Kalai}, which culminated in this year's \href{https://eprint.iacr.org/2025/118}{attack} on the Fiat--Shamir implementation used in \href{https://github.com/PolyhedraZK/Expander/}{PolyhedraZK/Expander}. This class of attacks is out of scope for this project proposal. We will interact with other researchers working on this topic so that our implementation can be adapted to potential mitigation strategies.
 \end{itemize}
 
 
@@ -142,7 +142,7 @@ Specifically, we aim to prove that if the interactive proof system is (state-res
 \paragraph{Methodology.}
 This proposal closely follows the results of a recent pen-and-paper proof (\href{https://eprint.iacr.org/2025/536.pdf}{ia.cr/2025/536}) implemented in Rust in arkworks (\href{https://github.com/arkworks-rs/spongefish}{arkworks-rs/spongefish}) as part of an Ethereum Academic grant.
 
-To achieve our objectives, we will seek external scrutiny on the publication already made, build a specification guided by different communities, and develop machine-checked proofs in parallel. We already have put in place the theory and a working group within the IETF for working on this project, which is currently under call for adoption. The main outputs will be a practitioner-ready specification and a reference implementation.
+To achieve our objectives, we will seek external scrutiny on the publication already made, build a specification guided by different communities, and develop machine-checked proofs in parallel. The main outputs will be a practitioner-ready specification and a reference implementation.
 
 
 % Project Overview
@@ -202,7 +202,7 @@ The project is divided into three work packages: formal verification, specificat
 This work package encompasses the formal verification of the Fiat--Shamir transformation of an interactive protocol. It will consist of the following steps.
 \begin{enumerate}[label=\textbf{Step \arabic*:}, leftmargin=*, itemsep=0.5em]
     \item Prove Theorems~14.3.1, 14.4.1, 16.2.1 in the SNARG book, which allow us to bridge soundness, knowledge soundness, and zero-knowledge of the non-interactive protocol to the interactive protocol.
-    \item Prove the Main Lemma (Lemma~5.1) from the paper. This step will carefully re-map any adversary for the designated Fiat--Shamir transformation to an adversary for the interactive protocol, in such a way that the resulting arguments strings, and the random oracle queries, can be re-mapped to random oracle queries.
+    \item Prove the Main Lemma (Lemma~5.1) from the paper. This step will carefully re-map any adversary for the designated Fiat--Shamir transformation to an adversary for the interactive protocol, in such a way that the resulting argument strings and the random oracle queries can be re-mapped to random oracle queries.
     \item Prove soundness, knowledge soundness and zero-knowledge of the non-interactive protocol. This step will rely on the two previous steps, and will be done in a modular way, so that the transformation can be re-used by other protocols and other Fiat--Shamir transformations that guarantee properties similar to the main lemma of Step 2.
 \end{enumerate}
 \paragraph{WP2: Specification and Reference Implementation. }
@@ -219,7 +219,7 @@ This work package will focus on providing a specification of the Fiat--Shamir tr
 \paragraph{Risk Assessment.}
 First, formal verification of cryptographic proofs in Lean requires specialized expertise and may encounter technical challenges. We will seek external expertise and follow an established proof strategy from prior work.
 
-Our specification must appeal to both traditional standards bodies and modern SNARK constructions. To address this, we will develop a modular architecture (e.g., abstracting away the hash function and the prover/verifier re-mappings) to address input from the different communities involved in the process, allowing different parties to edit different components. We will seek to agreement and interoperability with other active projects in the space.
+Our specification must appeal to both traditional standards bodies and modern SNARK constructions. To address this, we will develop a modular architecture (e.g., abstracting away the hash function and the prover/verifier re-mappings) to address input from the different communities involved in the process, allowing different parties to edit different components. We will seek agreement and interoperability with other active projects in the space.
 Finally, we will document design decisions, develop test suites targeting known edge cases, and conduct security reviews with the cryptographic engineering community before publication.
 
 \section{Team Members and Expertise}
