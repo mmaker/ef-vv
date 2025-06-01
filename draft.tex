@@ -9,6 +9,7 @@
 \usepackage{todonotes}
 \usepackage{epigraph}
 \usepackage{framed}
+\usepackage{bbm}
 % \usepackage{fontspec}
 % \setmainfont{calibri}
 % \usepackage{tgbonum}
@@ -51,7 +52,7 @@
 \begin{abstract}
 This project aims to provide a formally verified specification of the Fiat--Shamir transformation. Our goal is to deliver an interoperable framework for transforming interactive proof systems into non-interactive arguments that is widely adopted by the zero-knowledge community, ruling out certain classes of attacks.
 
-The first step is to develop machine-checkable proof that reduce for the (knoweldge) soundness of a non-interactive protocol to the state-restoration (knoweldge) soundness of an interactive one. We will then report on efficient implementation strategies for Fiat--Shamir, provide a formal security proof with precise bounds, and identify potential bugs in widely used implementations. Finally, we will deliver a software specification and a reference implementation for developers.
+The first step is to develop machine-checkable proof that reduces (knowledge) soundness of a non-interactive protocol to the state-restoration (knowledge) soundness of an interactive one. We will then report on efficient implementation strategies for Fiat--Shamir, provide a formal security proof with precise bounds, and identify potential bugs in widely used implementations. Finally, we will deliver a software specification and a reference implementation for developers.
 \end{abstract}
 
 \setcounter{tocdepth}{2}
@@ -61,7 +62,7 @@ The first step is to develop machine-checkable proof that reduce for the (knowel
 
 \definecolor{lightgray}{gray}{0.9}
 \definecolor{darkgray}{gray}{0.8}
-\newcommand{\TotalCost}{167 654\euro{}}
+\newcommand{\TotalCost}{179 654\euro{}}
 
 \begin{table}[h]
     \caption{Summary table of persons involved in the project.}
@@ -70,12 +71,12 @@ The first step is to develop machine-checkable proof that reduce for the (knowel
 \begin{tabular}{|c|l|c|c|l|}
     \hline
     Last, First name & Affiliation & Involvement (h/week) & Duration (months) & Role  \\\hline\hline
-    \textbf{Orrù},  Michele & CNRS & 10 & 10 (Jun-Mar) & Project Coordinator \\
-    \textbf{Chiesa}, Alessandro & EPFL & 5 & 10 (Jun-Mar) & Technical Advisor \\
-    \textbf{TBD} & Ethereum Foundation & 20 & 10 (Jun-Mar) & PhD Student (Lean expert) \\
-    \textbf{TBD} & Ethereum Foundation & 20 & 10 (Jun-Mar) & PhD Student (Lean expert) \\
-    \textbf{TBD} & EPFL & 20 & 10 (Jun-Mar) & PhD Stud.\ (Lean expert) \\
-    \textbf{TBD} & \textbf{TBD} & 40 & 2 (Jun-Jul) & Grad.\ Student (Proofreader) \\
+    \textbf{Orrù},  Michele & CNRS & 10 & 10 (Jul-Apr) & Project Coordinator \\
+    \textbf{Chiesa}, Alessandro & EPFL & 5 & 10 (Jul-Apr) & Technical Advisor \\
+    \textbf{TBD} & Ethereum Foundation & 20 & 10 (Jul-Apr) & PhD Student (Lean expert) \\
+    \textbf{TBD} & Ethereum Foundation & 20 & 10 (Jul-Apr) & PhD Student (Lean expert) \\
+    \textbf{TBD} & EPFL & 20 & 10 (Jul-Apr) & PhD Stud.\ (Lean expert) \\
+    \textbf{TBD} & \textbf{TBD} & 40 & 2 (Jul-Sep) & Grad.\ Student (Proofreader) \\
     \hline\hline \rowcolor{lightgray}
     \multicolumn{3}{|l|}{\textbf{Total Hours}} & \multicolumn{2}{c|}{\textbf{3,320}} \\\hline
     \multicolumn{3}{|l|}{\textbf{Total Cost}} & \multicolumn{2}{c|}{\textbf{\TotalCost}} \\\hline
@@ -88,7 +89,7 @@ The first step is to develop machine-checkable proof that reduce for the (knowel
 \section{Context and Positioning}
 
 
-The Fiat--Shamir transformation allows one to turn a public-coin interactive proof into a non-interactive argument by means of a cryptographic hash function.
+The Fiat--Shamir transformation allows to turn a public-coin interactive proof into a non-interactive argument by means of a cryptographic hash function.
 Informally, the way in which it works is by replacing the verifier messages with the output of a hash function. The transformation is studied in the random oracle model, and is today a fundamental tool for the development of cryptographic proofs such as zero-knowledge proofs, SNARKs and STARKs.
 
 % Motivation
@@ -97,16 +98,17 @@ Since its inception, many variants of the "Fiat--Shamir transformation" have bee
 \begin{itemize}
     \item On the theory side, researchers often study a Fiat--Shamir transformation that assumes the existence of $\mathsf{k}$ random oracles $f_1, \dots, f_{\mathsf{k}}$ (one per round) of the form:
 \begin{equation*}
-    f_i: \mathcal{M}_{\mathbf{P}, 1} \times \cdots \times \mathcal{M}_{\mathbf{P}, \mathsf{k}} \to \mathcal{M}_{\mathbf{V}, i}\enspace,
+    f_i: \mathcal{I} \times \mathcal{M}_{\mathbf{P}, 1} \times \cdots \times \mathcal{M}_{\mathbf{P}, \mathsf{k}} \to \mathcal{M}_{\mathbf{V}, i}\enspace,
 \end{equation*}
-where each \( \mathcal{M}_{\mathbf{P}, 1}, \dots, \mathcal{M}_{\mathbf{P}, i} \) are the message spaces of the prover in each round, and \( \mathcal{M}_{\mathbf{V}, i} \) is the message space of the verifier in the \(i\)-th round.
-Each oracle is used to generate the \(i\)-th verifier challenge as \(f_i(\alpha_1, \dots, \alpha_{\mathsf{i}})\), where \(\alpha_1, \dots, \alpha_{\mathsf{i}}\) are the messages exchanged in the first \(i\) rounds of the protocol.
-This transformation is not only inefficient for practical applications (the oracle query length is $\Omega(\mathsf{k})$), but it also does not correspond to the way symmetric primitives are defined.
+where \(\mathcal{I}\) is the instance space,  each \( \mathcal{M}_{\mathbf{P}, 1}, \dots, \mathcal{M}_{\mathbf{P}, i} \) are the message spaces of the prover in each round, and \( \mathcal{M}_{\mathbf{V}, i} \) is the message space of the verifier in the \(i\)-th round. (Sometimes, we also consider salt strings in \(\{0, 1\}^\delta\) where \(\delta\) is the privacy parameter, for zero-knowledge.)
 
-    \item Practitioners, on the other hand, often develop ad-hoc heuristics to make the Fiat--Shamir transformation work in practice. There are countless ad-hoc implementations in proof systems (e.g., starkware-libs/stwo, Consensys/gnark-crypto, EspressoSystems/jellyfish, arkworks-rs/sponge, etc.), several standards for specific applications (RFC 9591, RFC 9497, draft-irtf-cfrg-bbs-signatures, draft-google-cfrg-libzk, etc.), and a few generic frameworks (e.g., STROBE, SAFE API). None of these possess a formal security argument.
+Each oracle is used to generate the \(i\)-th verifier challenge as \(f_i(\mathbbm{x}, \alpha_1, \dots, \alpha_{\mathsf{i}})\), where \(\mathbbm{x}\) is the instance, \(\alpha_1, \dots, \alpha_{\mathsf{i}}\) are the messages exchanged in the first \(i\) rounds of the protocol.
+This transformation is not only inefficient for practical applications (the oracle query length is $O(\mathsf{k}^2)$), but it also does not correspond to the way symmetric primitives are defined.
+
+    \item Practitioners, on the other hand, often develop ad-hoc heuristics to make the Fiat--Shamir transformation work in practice. There are countless ad-hoc implementations in proof systems (e.g., \href{https://github.com/starkware-libs/stwo}{starkware-libs/stwo}, \href{https://github.com/Consensys/gnark-crypto}{Consensys/gnark-crypto}, \href{https://github.com/EspressoSystems/jellyfish}{EspressoSystems/jellyfish}, \href{https://github.com/arkworks-rs/sponge}{arkworks-rs/sponge}, etc.), several standards for specific applications (RFC 9591, RFC 9497, draft-irtf-cfrg-bbs-signatures, draft-google-cfrg-libzk, etc.), and a few generic frameworks (e.g., STROBE, SAFE API). None of these possess a formal security argument.
 \end{itemize}
 
-The main cause for this mismatch is that cryptography engineers cannot rely on a formal, well-established, and provably secure method. As a result, they have developed heuristics for performing the Fiat--Shamir transformation. Because academic papers often focus on proving security in generic cyclic groups, implementation details are frequently overlooked. Because of the lack of a concrete specification, practitioners are left to fill in the gaps, leading to insecure implementations that often present the same class of bugs. Below, we highlight the main categories of well-known pitfalls that have led to insecure implementations:
+The main reason for this mismatch is that academic papers never describe how the Fiat--Shamir transformation can be built on top of fixed-size symmetric primitives, which is what symmetric cryptographers focus on. Because of the lack of a concrete specification, practitioners are left to fill in the gaps, leading to insecure implementations that often present the same class of bugs. Below, we highlight the main categories of well-known pitfalls that have led to insecure implementations:
 
 \begin{itemize}
     \item \textbf{Incorrect serialization of the statement}. Failing to invoke the random oracle on the complete set of inputs, including the statement, session identifier, or protocol identifier, can enable proof forgery, replay, or cross-protocol attacks. Such mistakes have been uncovered in voting systems like \href{https://eprint.iacr.org/2016/771}{Helios}, \href{https://ieeexplore.ieee.org/document/9152765}{Scytl-SwissPost}, and \href{https://inria.hal.science/hal-02928953/file/final.pdf}{Belenios}, allowing for vote tampering, and more recently in some security audits:
@@ -115,22 +117,20 @@ The main cause for this mismatch is that cryptography engineers cannot rely on a
 \href{https://github.com/trailofbits/publications/blob/master/reviews/2023-04-scroll-zkEVM-wave1-securityreview.pdf}{\textsf{2023-04-scroll-zkEVM-wave1-securityreview}} (elliptic curve parameters omitted)
 \item \href{https://github.com/Consensys/gnark/blob/master/audits/2024-09\%20-\%20Least\%20Authority\%20-\%20arithm\%20and\%20GKR.pdf}{\textsf{2024-09 - Least Authority - arithm and GKR}} (FFT domain generators omitted)
 \item \href{https://leastauthority.com/wp-content/uploads/2024/11/Updated\_071124\_Polygon\_Plonky3\_Final\_Audit\_Report.pdf}{\textsf{Least Authority- Polygon Plonky3 Updated Final Audit Report}} (FRI configuration omitted)
-\item \href{https://leastauthority.com/wp-content/uploads/2023/10/Safeheron_MPC_Algorithm_Updated_Final_Audit_Report_Least_Authority.pdf}{\textsf{Safeheron-MPC-Algorithm-Updated-Final-Audit-Report-Least-Authority}} (``weak'' Fiat--Shamir)
+\item \href{https://leastauthority.com/wp-content/uploads/2023/10/Safeheron_MPC_Algorithm_Updated_Final_Audit_Report_Least_Authority.pdf}{\textsf{Safeheron-MPC-Algorithm-Updated-Final-Audit-Report-Least-Authority}} (instance omitted)
     \end{itemize}
     \item \textbf{Erroneous implementation of the Fiat--Shamir transformation}. This includes implementations that perform the Fiat--Shamir transformation without placing all the prover messages in the Fiat--Shamir transformation. Such mistakes can lead to proof forgery, as previously seen in \href{https://www.youtube.com/watch?v=Sk-S8-n6Jo4}{the last challenge attack}, a widely used optimization for the \href{https://eprint.iacr.org/2025/565}{Gemini polynomial commitment scheme}, a recent \href{https://t.co/RFaHQOtAAq}{Solana bug},
-    \href{https://github.com/trailofbits/publications/blob/master/reviews/zcoin-lelantus-summary.pdf}{zcoin-lelantus-summary.pdf} (verifier messages independent of the the prover messages
-
+    \href{https://github.com/trailofbits/publications/blob/master/reviews/zcoin-lelantus-summary}{zcoin-lelantus-summary.pdf}.
 
     \item \textbf{Incorrect mapping to and from the hash function domain}. This includes improper serialization of group elements, biased challenge generation, accepting multiple representatives of the same element, or failing to validate group membership. These issues are still affecting some commmon implementations such ask \href{https://github.com/arkworks-rs/crypto-primitives/blob/main/crypto-primitives/src/snark/constraints.rs#L163}{arkworks-rs} and need to be addressed.
 
-    \item \textbf{Flawed random oracle methodology:} Some attacks exploit the gap between the theoretical random oracle model and its practical instantiation, undermining soundness. This includes the line of work \href{https://dl.acm.org/doi/10.5555/946243.946302}{started by Yael Kalai} which culminated in this year's \href{https://eprint.iacr.org/2025/118}{attack} to the Fiat-Shamir implementation used in \href{https://github.com/PolyhedraZK/Expander/}{PolyhedraZK/Expander}.
+    \item \textbf{Flawed random oracle methodology:} Some attacks exploit the gap between the theoretical random oracle model and its practical instantiation, undermining soundness. This includes the line of work \href{https://dl.acm.org/doi/10.5555/946243.946302}{started by Yael Kalai} which culminated in this year's \href{https://eprint.iacr.org/2025/118}{attack} to the Fiat-Shamir implementation used in \href{https://github.com/PolyhedraZK/Expander/}{PolyhedraZK/Expander}. This class of attacks is out of scope for this project proposal, but we will interact with other researchers working on this topic to ensure that our implementation can be adapted to potential mitigation strategies.
 \end{itemize}
 
 
 % Objectives
 \paragraph{Objectives.}
 The goal of this project is to formally prove, implement, and specify a Fiat--Shamir transformation suitable for practitioners. This will mitigate attacks corresponding to the first two classes above and help investigate the third by restricting the attack surface to a fixed-length permutation function, while providing a simple, efficient, and formally backed transformation.
-
 Specifically, we aim to prove that if the interactive proof system is (state-restoration) knowledge sound (and honest-verifier zero-knowledge), then its Fiat--Shamir transformation is also knowledge sound (and zero-knowledge).
 
 
@@ -170,8 +170,7 @@ The project is divided into three work packages: formal verification, specificat
     group top shift=.6,
     group height=.3]{1}{10}
     %labels
-    \gantttitle{Fiat--Shamir Project (Jun--Mar 2026)}{10} \\
-    \gantttitle{Jun}{1}
+    \gantttitle{Fiat--Shamir Project (Jul--Apr 2026)}{10} \\
     \gantttitle{Jul}{1}
     \gantttitle{Aug}{1}
     \gantttitle{Sep}{1}
@@ -180,10 +179,11 @@ The project is divided into three work packages: formal verification, specificat
     \gantttitle{Dec}{1}
     \gantttitle{Jan}{1}
     \gantttitle{Feb}{1}
-    \gantttitle{Mar}{1} \\
+    \gantttitle{Mar}{1}
+    \gantttitle{Apr}{1} \\
     % Work packages with step references
-    % \ga nttgroup[]{WP1}{1}{5} \\
-    \ganttbar{WP1.1}{1}{2} \\
+    % \ganttgroup[]{WP1}{1}{5} \\
+    \ganttbar{WP1.1}{1}{5} \\
     \ganttbar{WP1.2}{2}{6} \\
     \ganttbar{WP1.3}{6}{7} \\
     % WP2
@@ -204,7 +204,7 @@ This work package encompasses the formal verification of the Fiat--Shamir transf
     \item Prove soundness, knowledge soundness and zero-knowledge of the non-interactive protocol. This step will rely on the two previous steps, and will be done in a modular way, so that the transformation can be re-used by other protocols and other Fiat--Shamir transformations that guarantee properties similar to the main lemma of Step 2.
 \end{enumerate}
 \paragraph{WP2: Specification and Reference Implementation. }
-This work package will focus on providing a specification of the Fiat--Shamir transformation, ideally reaching consensus with the larger community, including: the new NOISE version (involving Trevor Perrin in the discussion), the IETF CFRG group (in particular Cathie Yun from Apple), and the broader cryptographic community.
+This work package will focus on providing a specification of the Fiat--Shamir transformation, ideally reaching consensus with the broader cryptographic community.
 \begin{enumerate}[label=\textbf{Step \arabic*:}, leftmargin=*, itemsep=0.5em]
 
     \item \textbf{Specification:} Provide a specification of the Fiat--Shamir transformation, including a description of the input and output formats, as well as the security properties that the transformation should satisfy.
@@ -217,9 +217,8 @@ This work package will focus on providing a specification of the Fiat--Shamir tr
 \paragraph{Risk Assessment.}
 First, formal verification of cryptographic proofs in Lean requires specialized expertise and may encounter technical challenges. We will seek external expertise and follow an established proof strategy from prior work.
 
-Our specification must appeal both traditional standards bodies and modern SNARK constructions. To address this, we will develop a modular architecture (e.g.\ abstracting away the hash function and the prover/verifier re-mappings) from the  to try to address inputs from the different communities involved in the process, letting different parties potentially edit different components. We will try to establish agreement within the IETF CFRG community, Trevor Perrin and the next-generation NOISE protocol framework, and the blockchain community doing our best to ensure inter-operability.
-
-Third, we will document all design decisions, develop test suites targeting known edge cases, and conduct coordinated security reviews with the cryptography engineering community before publication.
+Our specification must appeal both traditional standards bodies and modern SNARK constructions. To address this, we will develop a modular architecture (e.g.\ abstracting away the hash function and the prover/verifier re-mappings) from the  to try to address inputs from the different communities involved in the process, letting different parties potentially edit different components. We will try to establish agreement and inter-operability with different projects active in the space.
+Finally, we will document design decisions, develop test suites targeting known edge cases, and conduct coordinated security reviews with the cryptography engineering community before publication.
 
 \section{Team Members and Expertise}
 
@@ -262,7 +261,7 @@ An administrative assistant from the Ethereum Foundation will help coordinate wi
             \hline\hline
             \multicolumn{2}{>{\columncolor[gray]{.8}}r|}{\textbf{Other costs}}\\
             Equipment (Computing resources) & 5 000\euro{} \\
-            Travels and visits & 16 800\euro{} \\
+            Travels and visits & 29 900\euro{} \\
         \end{tabular} \\
         \hline\hline
         \textbf{Total } & \multicolumn{1}{r|}{\TotalCost} \\
@@ -284,29 +283,23 @@ An administrative assistant from the Ethereum Foundation will help coordinate wi
 \paragraph{Equipment and Operational Costs.}
 5,000\euro{} are budgeted for computing resources, software licenses, and equipment.
 
-\paragraph{Travel and Dissemination.} The travel and dissemination budget supports in-person collaboration and outreach activities. It includes a research visit for the project coordinators to meet in Lausanne at the SECCOMP lab of EPFL, enabling direct coordination on project milestones and addressing potential issues in the paper or implementation. Participation in the IETF conference is planned to build consensus within the cryptography community around the Fiat--Shamir transformation. Attendance at an academic conference by two team members will allow the presentation of project results and engagement with the broader research community. Finally, a visit to the Simons Institute in Berkeley will facilitate close collaboration with team members and other researchers participating in the \href{https://simons.berkeley.edu/workshops/cryptography-10-years-later-obfuscation-proof-systems-secure-computation-boot-campx}{Proofs Workshop} and working on the Lean implementation.
+\paragraph{Travel and Dissemination.} The travel and dissemination budget supports in-person collaboration and outreach activities. It includes a research visit for the project coordinators to meet in Lausanne at the COMPSEC lab of EPFL, enabling direct coordination on project milestones and addressing potential issues in the paper or implementation. Participation to academic conferences for the PI and the students is planned to build consensus within the cryptography and applied cryptography community around the Fiat--Shamir transformation. Attendance to these events will foster a broader community adoption. Finally, a visit to the Simons Institute in Berkeley will facilitate close collaboration with team members and other researchers participating in the \href{https://simons.berkeley.edu/workshops/cryptography-10-years-later-obfuscation-proof-systems-secure-computation-boot-campx}{Proofs Workshop} and working on the Lean implementation.
 
 \begin{table}[t]
     \centering
-    \caption{Detailed breakdown of travel and visit costs.}
-    \begin{tabular}{|l|r|}
+    \caption{Detailed breakdown of travel and visit costs for Michele Orrù (left) and Alessandro Chiesa (right).}
+    \begin{tabular}[t]{|l|r|}
         \hline
         \textbf{Travel Item} & \textbf{Cost (EUR)} \\
         \hline\hline
         Research Visit (Paris--Lausanne) & 2 000\euro{} \\
         \hline
-        \multicolumn{2}{|l|}{\textbf{IETF Conference (July)}} \\
+        \multicolumn{2}{|l|}{\textbf{Research Conference (\(\times 3\))}} \\
         \hline
-        Flight (Boston to Madrid, round trip) & 1 000\euro{} \\
-        Accommodation in Madrid (4 nights) & 1 200\euro{} \\
+        Flight & 1 500\euro{} \\
+        Accommodation (4 nights) & 1 200\euro{} \\
         Local transportation and incidentals & 300\euro{} \\
         Conference registration & 800\euro{} \\
-        \hline
-        \multicolumn{2}{|l|}{\textbf{Academic Conference}} \\
-        \hline
-        Flight and transportation & 1 600\euro{} \\
-        Accommodation and meals & 2 400\euro{} \\
-        Conference registration & 1 000\euro{} \\
         \hline
         \multicolumn{2}{|l|}{\textbf{Simons Institute Visit (Berkeley)}} \\
         \hline
@@ -315,11 +308,40 @@ An administrative assistant from the Ethereum Foundation will help coordinate wi
         Local transportation and meals & 1 800\euro{} \\
         \hline\hline
         \rowcolor{lightgray}
-        \textbf{Total Travel and Visit Costs} & \textbf{16 800\euro{}} \\
+        \textbf{Total Travel and Visit Costs} & \textbf{19 900\euro{}} \\
+        \hline
+    \end{tabular}
+    \begin{tabular}[t]{|l|r|}
+        \hline
+        \textbf{Travel Item} & \textbf{Cost (EUR)} \\
+        \hline\hline
+        Flat Rate & 10 000\euro{} \\
+    %     \hline
+    %     \multicolumn{2}{|l|}{\textbf{IETF Conference (July)}} \\
+    %     \hline
+    %     Flight (Boston to Madrid, round trip) & 1 000\euro{} \\
+    %     Accommodation in Madrid (4 nights) & 1 200\euro{} \\
+    %     Local transportation and incidentals & 300\euro{} \\
+    %     Conference registration & 800\euro{} \\
+    %     \hline
+    %     \multicolumn{2}{|l|}{\textbf{Academic Conference}} \\
+    %     \hline
+    %     Flight and transportation & 1 600\euro{} \\
+    %     Accommodation and meals & 2 400\euro{} \\
+    %     Conference registration & 1 000\euro{} \\
+    %     \hline
+    %     \multicolumn{2}{|l|}{\textbf{Simons Institute Visit (Berkeley)}} \\
+    %     \hline
+    %     Flight (Paris to Berkeley, round trip) & 1 200\euro{} \\
+    %     Accommodation (15 days) & 3 500\euro{} \\
+    %     Local transportation and meals & 1 800\euro{} \\
+        \hline\hline
+        \rowcolor{lightgray}
+        \textbf{Total Travel and Visit Costs} & \textbf{10 000\euro{}} \\
         \hline
     \end{tabular}
 \end{table}
 
- All outputs of this project—including the specification, reference implementation, and supporting materials—will be released under a permissive open-source license (MIT or Apache 2.0) to maximize adoption and community contributions. We will actively engage with open-source cryptography projects, standards bodies (e.g., IETF CFRG), and the Ethereum ecosystem to promote adoption. Outreach will include documentation, tutorials, and presentations at relevant workshops and conferences. Success will be measured by: (1) completion of the formally verified specification; (2) public release of the formal specification and a reference implementation; (3) positive feedback from standards bodies; and (4) discovery of bugs in other implementations in the Ethereum ecosystem.
+ All outputs of this project—including the specification, reference implementation, and supporting materials—will be released under a permissive open-source license (MIT or Apache 2.0) to maximize adoption and community contributions. We will actively engage with open-source cryptography projects, standards bodies, and the wider Ethereum ecosystem to promote adoption. Outreach will include documentation, tutorials, and presentations at relevant workshops and conferences. Success will be measured by: (1) completion of the formally verified specification; (2) public release of the formal specification and a reference implementation; (3) positive feedback from standards bodies; and (4) discovery of bugs in other implementations in the Ethereum ecosystem.
 
 \end{document}
